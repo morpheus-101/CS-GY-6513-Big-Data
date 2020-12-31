@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  serverless-data-pipelines
+
+  Sample SAM Template for serverless-data-pipelines
+
+
+Globals:
+  Function:
+    Timeout: 100
+
+Parameters:
+  MainDataBucket:
+    Type: String
+    Default: 'big-data-class1'
+  MainDataBucketArn:
+    Type: String
+    Default: 'arn:aws:s3:::big-data-class1'
+
+# has s3 access
+Resources:
+
+  LambaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: LambaExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Ref MainDataBucketArn
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource: !Join ["/", [!Ref MainDataBucketArn, "*"]]
+              - Effect: Allow
+                Action:
+                - cloudwatch:PutMetricData
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                - logs:CreateLogGroup
+                - logs:DescribeLogStreams
+                Resource: "*"
+
+
+
+  # TODO: Note, also need EMR access for this lambda
+  EMRFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      FunctionName: EMRFunction
+      CodeUri: emr-1/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt [ LambaExecutionRole, Arn ]
+      MemorySize: 1024
+      Layers:
+      - !Ref DataProcessingLayer
+
+      # no support for s3 trigger for pre-created bucket
+      # Events: # new s3 trigger
+      #   S3Event:
+      #     Type: S3
+      #     Properties:
+      #       Bucket: !Ref MainDataBucket
+      #       Events: s3:ObjectCreated:Put
+      #       Filter:
+      #         S3Key:
+      #           Rules:
+      #             - Name: prefix
+      #               Value: batch-job/
+      #             - Name: suffix
+      #               Value: .csv
+
+
+  # note, role requires s3 access
+  GetDataFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      FunctionName: GetDataFunction
+      CodeUri: get-data/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt [ LambaExecutionRole, Arn ]
+      MemorySize: 1024
+      Layers: #-- Can't build this without sam
+      - !Ref DataProcessingLayer
+      Events:
+        Schedule1:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day)
+
+
+
+
+
+
+  DataProcessingLib:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src-infra/layers/dataProcessingLib/
+      Handler: data_processing_lib.lambda_handler
+      Runtime: python3.7
+
+
+  DataProcessingLayer:
+    Type: AWS::Serverless::LayerVersion
+    DependsOn: DataProcessingLib
+    Properties:
+      Description: Lambda layer for writing additional functions for data processing
+      LayerName: DataProcessingLib
+      ContentUri: ./.aws-sam/build/DataProcessingLib
+      CompatibleRuntimes: 
+        - python3.7
+      RetentionPolicy: Delete
+
+Outputs:
+  
+
+  EMRFunction:
+    Description: "None"
+    Value: !GetAtt EMRFunction.Arn
+  # EMRFunctionIamRole:
+  #   Description: "None"
+  #   Value: !GetAtt EMRFunctionRole.Arn
+
+
+  GetDataFunction:
+    Description: "None"
+    Value: !GetAtt GetDataFunction.Arn
+  # GetDataFunctionIamRole:
+  #   Description: "None"
+  #   Value: !GetAtt GetDataFunctionRole.Arn
+
+
+  DataProcessingLib:
+    Description: "Processing Layer"
+    Value: !GetAtt DataProcessingLib.Arn

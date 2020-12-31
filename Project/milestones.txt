@@ -1,0 +1,28 @@
+There are two parts of the project. The first part includes the global and national impact of Covid-19 on the financial market. The second part consists of the analysis of the 
+impact of Covid-19 in NYC with the help of Taxi and Restaurant datasets in the city. The following are the questions that we will be working on as sub-part of the project:
+
+First part:
+===========
+S & P 500 v/s global/US covid cases/deaths
+Clustering the S & P 500 companies according to their industry and observing the trend of those industries vs global/US covid cases/deaths
+Cryptocurrency rates v/s global/US covid cases/deaths
+Currencies vs global/US covid cases/deaths
+Unemployment rate vs US covid/deaths
+Largest fall plots of S&P 500 companies
+
+Second part:
+============
+Plot for open restaurants vs each boroughs
+Number of restaurants for open dining and number of covid cases vs the timeline
+Finding the number of restaurants which were approved for sidewalks only, road only or both
+Finding the number of restaurants which were approved to serve alcohol
+Number of taxi trips and number of covid cases vs the timeline
+Average number of passengers and number of covid cases vs the timeline
+Plots for payment types for each cash and card payments for taxis.
+Per day fare average and number of vid cases vs the timeline
+Per day average trip distance and number of vid cases vs the timeline
+
+Ashish and Rishikesh will complete the first part of the project of the project till the end of the first week i.e. 29th of November 2020. Ahmed will complete the cloud 
+infrastructure implementation on AWS in the first week. The second part of the project will be completed by the second week as well as the paper and presentation.
+
+

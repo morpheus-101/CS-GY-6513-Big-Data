@@ -1,0 +1,73 @@
+version: 0.2
+
+
+phases:
+  install:
+    commands:
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2 &
+      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
+
+
+      # Codebuild Service Role requires access to AWS ECR Container Service
+      # - echo Logging in to Amazon ECR...
+      # - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+      # Use Install phase to install packages or any pre-reqs you may need throughout the build (e.g. dev deps, security checks, etc.)
+      # - echo "[Install phase]"
+  pre_build:
+    commands:
+      # Use Pre-Build phase to run tests, install any code deps or any other customization before build
+      # - echo "[Pre-Build phase]"
+  build:
+    commands:
+      # Use Build phase to build your artifacts (compile, package, etc.)
+      - echo "[Build phase]"
+      # We package the SAM template and create `packaged.yaml` file that will be used in our pipeline for deployment
+      ## Here we separate Build from Deployment and segregate permissions for different steps
+
+
+
+
+      # - echo "Starting SAM packaging `date` in `pwd`"
+
+      - pip install --user aws-sam-cli
+      - USER_BASE_PATH=$(python -m site --user-base)
+      - export PATH=$PATH:$USER_BASE_PATH/bin
+      - echo "Before Build---"
+
+      - ls -lart
+      - sam build --use-container --template-file template.yaml # 
+      - ls -lart
+      - ls -lart .aws-sam
+      # # to be very specific -- although this is whole point of SAM
+      - sam package --template-file .aws-sam/build/template.yaml --s3-bucket $BUILD_OUTPUT_BUCKET --output-template-file packaged.yaml
+
+
+
+      # Just build without docker for now
+      # - aws cloudformation package --template-file template.yaml --s3-bucket $BUILD_OUTPUT_BUCKET --output-template-file packaged.yaml
+  post_build:
+    commands:
+      # Use Post Build for notifications, git tags and any further customization after build
+      # - echo "[Post-Build phase]"
+      - echo "SAM packaging completed on `date`"
+
+##################################
+# Build Artifacts to be uploaded #
+##################################
+
+artifacts:
+  files:
+    # list of local files relative to this build environment that will be added to the final artifact (zip)
+    - packaged.yaml
+    # - '**/*'
+  discard-paths: yes
+
+#########################################
+# Cache local files for subsequent runs #
+#########################################
+
+cache:
+  paths:
+  # List of path that CodeBuild will upload to S3 Bucket and use in subsequent runs to speed up Builds
+  # - '/root/.cache/pip'

@@ -1,0 +1,41 @@
+{
+  "Records": [
+      {
+          "eventVersion": "2.1", 
+          "eventSource": "aws:s3", 
+          "awsRegion": "us-east-1", 
+          "eventTime": "2020-12-14T08:18:29.567Z", 
+          "eventName": "ObjectCreated:Put",
+          "userIdentity": {
+          "principalId": "AWS:AROA5NLYBNC222TZHXYYS:GetDataFunction"
+              
+          }, "requestParameters": {
+              "sourceIPAddress": "18.205.26.64"
+              
+          }, "responseElements": {
+              "x-amz-request-id": "AS6Y8K1Y7TBGFRDW", 
+              "x-amz-id-2": "emaJbAvee+G6ziougwCCVJWYCY//h42cE2RQpu7tACkvAdOLF1g3aSfqu7rPk+v3Xm3+gBz/Caj3dghRTJ+0bGIGiyZixSeK"
+              
+          }, "s3": {
+              "s3SchemaVersion": "1.0", 
+              "configurationId": "746f5f1c-4b73-4c37-aa54-84e8f6d0bc20", 
+              "bucket": {
+                  "name": "big-data-class1", 
+                  "ownerIdentity": {
+                      "principalId": "A36AJSWKKYBH2S"
+                      
+                  }, "arn": "arn:aws:s3:::big-data-class1"
+                  
+              }, "object": {
+                  "key": "batch-job/today_stock20201211.csv", 
+                  "size": 12088164, 
+                  "eTag": "060b311362c4559833bf5545866e47d6", 
+                  "sequencer": "005FD71FE140631D7E"
+                  
+              }
+              
+          }
+          
+      }
+      ]
+}

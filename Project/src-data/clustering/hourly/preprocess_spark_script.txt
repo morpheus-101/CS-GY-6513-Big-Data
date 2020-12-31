@@ -1,0 +1,93 @@
+spark
+
+from pyspark.sql.functions import *
+
+companies = spark.read.csv('s3://big-data-class1/companies_union.csv',
+                          header = True, inferSchema = True)
+
+companies.cache()
+companies.show(5, False)
+
+companies = companies.drop('_c0')
+
+companies = companies.drop('Unnamed: 0')
+
+companies.show(2)
+
+carnival_corp = companies.filter(col('Ticker') == 'CCL')
+
+carnival_corpval_corp.cache()
+carnival_corp.show(2)
+
+carnival_corp.count()
+
+cutoff = '20200307'
+carnival_corp_pre = carnival_corp.filter(col('Date') < cutoff)
+carnival_corp_post = carnival_corp.filter(col('Date') >= cutoff)
+
+carnival_corp_pre.groupBy().avg().drop('avg(Date)').show()
+
+carnival_corp_post.groupBy().avg().drop('avg(Date)').show()
+
+pfizer = companies.filter(col('Ticker') == 'PFE')
+pfizer_pre = pfizer.filter(col('Date') < cutoff)
+pfizer_post = pfizer.filter(col('Date') >= cutoff)
+
+pfizer_pre.groupBy().avg().drop('avg(Date)').show()
+
+pfizer_post.groupBy().avg().drop('avg(Date)').show()
+
+amazon = companies.filter(col('Ticker') == 'AMZN')
+amazon_pre = amazon.filter(col('Date') < cutoff)
+amazon_post = amazon.filter(col('Date') >= cutoff)
+
+amazon_pre.groupBy().avg().drop('avg(Date)').show()
+
+amazon_post.groupBy().avg().drop('avg(Date)').show()
+
+companies_close = companies.select('Date', 'Timestamp', 'Ticker', 'ClosePrice')
+
+companies_close.show(2, False)
+
+companies_close.printSchema()
+
+
+
+# convert minute data to hourly data
+companies_close = companies_close.withColumn('time', concat(col('Date').cast("string"), lit(" "), col('Timestamp')))\
+.withColumn('Timestamp', to_timestamp(substring('time', 0, 13), "yyyyMMdd HH")).drop('Date', 'time')
+
+companies_close.show(2)
+
+companies_close = companies_close.groupBy('Timestamp', 'Ticker').agg(avg('ClosePrice').alias('ClosePrice')).sort(['Timestamp','Ticker'], ascending = True)
+
+# lots of shuffling involved in previous step so cache result
+companies_close.cache()
+companies_close.show(5)
+
+
+
+companies_close.groupBy('Ticker').agg(count('*')).sort('count(1)', ascending = False).show()
+
+companies_close = companies_close.withColumn("first_day", to_timestamp(lit('20200101 00'), "yyyyMMdd HH")).withColumn("diff", datediff("Timestamp", "first_day"))\
+.filter(col('diff') >= 0)
+
+companies_close = companies_close.drop('first_day', 'diff')
+
+companies_close.show(2)
+
+
+
+
+
+
+
+companies_close = companies_close.filter(col('Date') > "20200101")
+
+companies_close_drop_date = companies_close.drop('Date')
+
+
+
+companies_transposed = companies_close_drop_date.groupBy('Ticker').pivot('ClosePrice').agg(count('ClosePrice')).na.fill(0).orderBy('Ticker')
+
+
